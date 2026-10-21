@@ -34,6 +34,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.currentBackStackEntryAsState
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,12 +46,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             Lab09PTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                AppProductos()
             }
         }
     }
@@ -150,5 +150,58 @@ fun Contenido(
 @Composable
 fun ScreenInicio() {
     Text("INICIO")
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AppProductos() {
+    val nav = rememberNavController()
+    val vm: ProductViewModel = viewModel()
+    val entrada by nav.currentBackStackEntryAsState()
+    val enDetalle = entrada?.destination?.route == "producto/{id}"
+
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        if (enDetalle) "Detalle" else "Mi Tienda",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                navigationIcon = {
+                    if (enDetalle) {
+                        IconButton(onClick = { nav.popBackStack() }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Volver",
+                                tint = Color.White
+                            )
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            )
+        }
+    ) { pv ->
+        NavHost(
+            navController = nav,
+            startDestination = "productos",
+            modifier = Modifier.padding(pv)
+        ) {
+            composable("productos") {
+                ListaProductos(vm) { id -> nav.navigate("producto/$id") }
+            }
+            composable(
+                "producto/{id}",
+                arguments = listOf(navArgument("id") { type = NavType.IntType })
+            ) {
+                DetalleProducto(vm, it.arguments!!.getInt("id"))
+            }
+        }
+    }
 }
 
